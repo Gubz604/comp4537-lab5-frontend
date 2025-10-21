@@ -2,74 +2,86 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Comp 4537 - Lab 5</title>
 </head>
 
 <body>
     <h1>Comp 4537 - Lab 5</h1>
+
     <button type="button" onclick="insert()">Insert Data</button>
-    <br><br>
+    <br /><br />
     <div id="output"></div>
-    <textarea id="sql" rows="10" cols="50"></textarea>
-    <br><br>
+
+    <textarea id="sql" rows="10" cols="50" placeholder="SELECT * FROM patient;"></textarea>
+    <br /><br />
     <button type="button" onclick="sqlQuery()">Execute SQL</button>
 
     <script>
-        const xhttp = new XMLHttpRequest();
-        const endpointRoot = "http://localhost:8888/API/v1/";
+        // Use your actual Render URL
+        const endpointRoot = "https://YOUR-RENDER-SERVICE.onrender.com/API/v1/";
         const resource = "patients/";
         const select = "read/";
         const write = "write/";
 
-        // Insert Data 
         function insert() {
+            const xhttp = new XMLHttpRequest();
             xhttp.open("POST", endpointRoot + resource, true);
             xhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
             xhttp.onreadystatechange = function () {
-                if (this.readyState === 4 && this.status === 200) {
-                    alert(this.responseText);
+                if (this.readyState === 4) {
+                    if (this.status === 200) alert(this.responseText);
+                    else alert("Insert failed: " + this.responseText);
                 }
-            }
+            };
 
-            let sql = `INSERT INTO patient (name, dateofbirth)
-                            VALUES
-                            ('Sara Brown', '1901-01-01'),
-                            ('John Smith', '1941-01-01'),
-                            ('Jack Ma', '1961-01-30'),
-                            ('Elon Musk', '1999-01-01')
-                            ;`;
+            const sql = `INSERT INTO patient (name, dateofbirth)
+                   VALUES
+                   ('Sara Brown', '1901-01-01'),
+                   ('John Smith', '1941-01-01'),
+                   ('Jack Ma', '1961-01-30'),
+                   ('Elon Musk', '1999-01-01');`;
 
             xhttp.send(sql);
         }
 
-        // Execute SQL Query
         function sqlQuery() {
-            let sql = document.getElementById("sql").value.toLowerCase();
-            if (sql.trim().startsWith("select")) {
-                xhttp.open("GET", endpointRoot + select + "?sql=" + encodeURIComponent(sql), true);
+            const sqlRaw = document.getElementById("sql").value || "";
+            const sql = sqlRaw.trim().toLowerCase();
+
+            if (!sql) {
+                alert("Enter a SQL statement.");
+                return;
+            }
+
+            if (sql.startsWith("select")) {
+                const xhttp = new XMLHttpRequest();
+                const url = endpointRoot + select + "?sql=" + encodeURIComponent(sqlRaw);
+                xhttp.open("GET", url, true);
                 xhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
                 xhttp.onreadystatechange = function () {
-                    if (this.readyState === 4 && this.status === 200) {
-                        document.getElementById("output").innerHTML = this.responseText;
+                    if (this.readyState === 4) {
+                        if (this.status === 200) document.getElementById("output").innerHTML = this.responseText;
+                        else document.getElementById("output").textContent = "Query failed: " + this.responseText;
                     }
-                }
+                };
                 xhttp.send();
             }
-            else if (sql.trim().startsWith("insert")) {
-                console.log("Insert Statement Detected");
+            else if (sql.startsWith("insert")) {
+                const xhttp = new XMLHttpRequest();
                 xhttp.open("POST", endpointRoot + write, true);
                 xhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
                 xhttp.onreadystatechange = function () {
-                    if (this.readyState === 4 && this.status === 200) {
-                        alert(this.responseText);
+                    if (this.readyState === 4) {
+                        if (this.status === 200) alert(this.responseText);
+                        else alert("Write failed: " + this.responseText);
                     }
-                }
-                xhttp.send(sql);
+                };
+                xhttp.send(sqlRaw);
             }
             else {
-                alert("Only SELECT and INSERT statements are allowed!");
+                alert("Only SELECT and INSERT statements are allowed.");
             }
         }
     </script>
